@@ -210,12 +210,12 @@ export default function Home() {
             <div className="relative mt-8 lg:mt-0 w-full max-w-md mx-auto lg:max-w-none">
               <div className="relative h-80 sm:h-96 w-full">
                 <img 
-                  src="https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&q=80&w=800" 
+                  src="/hero-2.jpg" 
                   alt="ผลงานทำเล็บเจล" 
                   className="absolute top-0 right-4 w-3/4 h-72 sm:h-80 object-cover rounded-3xl shadow-2xl border-4 border-white z-10 transform hover:scale-105 transition-transform duration-500"
                 />
                 <img 
-                  src="https://images.unsplash.com/photo-1599305090598-fe179d501227?auto=format&fit=crop&q=80&w=800" 
+                  src="/hero-1.jpg" 
                   alt="ผลงานทำเล็บสไตล์ลูกแก้ว" 
                   className="absolute bottom-0 left-0 w-3/5 h-48 sm:h-56 object-cover rounded-3xl shadow-xl border-4 border-white z-20 transform hover:-translate-y-2 transition-transform duration-500"
                 />
