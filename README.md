@@ -1,6 +1,6 @@
 # 💅 Kannika Nail Salon - Booking Management System
 
-![Project Banner](/hero-1.jpg)
+![Project Banner](https://nail-salon-booking-eta.vercel.app/hero-1.jpg)
 
 > A modern, responsive, and real-time web application for managing nail salon appointments. Built to deliver a seamless booking experience for customers and efficient management for the salon owner.
 
