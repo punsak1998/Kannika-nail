@@ -10,11 +10,13 @@ type Service = {
   price: number;
   duration: number;
   image?: string; 
+  category?: string; // เพิ่มฟิลด์ category สำหรับจัดกลุ่ม
 };
 
 export default function Home() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null); // State สำหรับเก็บ Error
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   
@@ -23,7 +25,7 @@ export default function Home() {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [note, setNote] = useState(''); 
-  const [portfolioImage, setPortfolioImage] = useState<string | null>(null); // State เก็บรูปลูกค้าเลือกจากแกลเลอรี
+  const [portfolioImage, setPortfolioImage] = useState<string | null>(null);
   
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -41,21 +43,21 @@ export default function Home() {
       const params = new URLSearchParams(window.location.search);
       const design = params.get('design');
       const price = params.get('price');
-      const image = params.get('image'); // ดึงรูปลิงก์รูปภาพมาด้วย
+      const image = params.get('image'); 
       
       if (design) {
         let defaultNote = `เลือกลายเล็บ: ${design}`;
         if (price) defaultNote += ` (ราคาประเมิน ${price} บาท)`;
         
         setNote(defaultNote); 
-        if (image) setPortfolioImage(image); // เซฟรูปลง State ไว้โชว์
+        if (image) setPortfolioImage(image); 
         
         setSelectedServices([{
           id: 'portfolio_item',
           name: `ลายจากแกลเลอรี: ${design}`,
           price: price ? Number(price) : 0,
           duration: 60
-        }]);
+        } as Service]);
 
         setCurrentStep(2);
         
@@ -72,15 +74,18 @@ export default function Home() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
+        setError(null);
+        setLoading(true);
         const querySnapshot = await getDocs(collection(db, 'Services'));
         const servicesData: Service[] = [];
         querySnapshot.forEach((doc) => {
           servicesData.push({ id: doc.id, ...doc.data() } as Service);
         });
         setServices(servicesData);
-        setLoading(false);
       } catch (error) {
         console.error("Error fetching services: ", error);
+        setError("ไม่สามารถโหลดบริการได้ กรุณาลองใหม่ หรือโทร 08-2375-8440"); // แจ้งเตือนลูกค้าถ้าดึงข้อมูลไม่สำเร็จ
+      } finally {
         setLoading(false);
       }
     };
@@ -108,11 +113,9 @@ export default function Home() {
     if (selectedServices.length === 0 || !selectedDate || !selectedTime || !customerName || !customerPhone) return;
 
     setIsSubmitting(true);
-    // เริ่มต้นให้ใช้รูปจาก Portfolio ก่อน (ถ้าลูกค้ากดมาจากแกลเลอรี)
     let finalImageUrl = portfolioImage || ''; 
 
     try {
-      // แต่ถ้าลูกค้ากดอัปโหลดรูปใหม่ (อยากแก้ลาย) ให้ใช้รูปใหม่แทน
       if (selectedImage) {
         const formData = new FormData();
         formData.append('image', selectedImage);
@@ -137,7 +140,7 @@ export default function Home() {
         booking_date: selectedDate,
         booking_time: selectedTime,
         status: 'รอมัดจำ',
-        reference_image: finalImageUrl, // เซฟรูปลง Database ให้แอดมินเห็น!
+        reference_image: finalImageUrl, 
         total_price: selectedServices.reduce((total, s) => total + s.price, 0),
         created_at: serverTimestamp(),
       });
@@ -153,11 +156,12 @@ export default function Home() {
     }
   };
 
+  // จัดหมวดหมู่ใหม่ โดยใช้ category ใน Database ตรงๆ ลดโอกาสบั๊กจากการพิมพ์ชื่อผิด
   const groupedServices = {
-    'ทาสีเจล': services.filter(s => s.name.includes('ทาสีเจล')),
-    'เสริมพิเศษ': services.filter(s => !s.name.includes('ทาสีเจล') && !s.name.includes('ต่อเล็บ') && !s.name.includes('ถอด PVC') && !s.name.includes('เท้า')),
-    'ต่อเล็บ & ถอดเล็บ': services.filter(s => s.name.includes('ต่อเล็บ') || s.name.includes('ถอด PVC')),
-    'บริการเล็บเท้า': services.filter(s => s.name.includes('เท้า')),
+    'ทาสีเจล': services.filter(s => s.category === 'ทาสีเจล'),
+    'เสริมพิเศษ': services.filter(s => s.category === 'เสริมพิเศษ'),
+    'ต่อเล็บ & ถอดเล็บ': services.filter(s => s.category === 'ต่อเล็บ & ถอดเล็บ'),
+    'บริการเล็บเท้า': services.filter(s => s.category === 'บริการเล็บเท้า'),
   };
 
   const scrollToBooking = () => {
@@ -225,6 +229,15 @@ export default function Home() {
         </div>
       </div>
 
+      {/* เพิ่มจุดแสดง Error ก่อนเข้าสู่ส่วนจองคิว */}
+      {error && (
+        <div className="max-w-3xl mx-auto mt-10 px-4 sm:px-6 lg:px-8">
+          <div className="text-center p-6 bg-red-50 text-red-600 rounded-xl border border-red-200 shadow-sm relative z-20">
+            <p className="text-lg font-medium">{error}</p>
+          </div>
+        </div>
+      )}
+
       <div id="booking-section" className="py-16 px-4 sm:px-6 lg:px-8 scroll-mt-20">
         <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-[#EFE6E8] p-8 sm:p-12">
           
@@ -247,7 +260,7 @@ export default function Home() {
           </div>
 
           {loading ? (
-            <div className="text-center text-[#D496A7] py-10">กำลังโหลดข้อมูล...</div>
+            <div className="text-center text-[#D496A7] py-10 font-medium">กำลังโหลดข้อมูลบริการ...</div>
           ) : (
             <div className="animate-fade-in">
               
@@ -341,7 +354,6 @@ export default function Home() {
                 <div>
                   <h2 className="text-2xl font-bold mb-8">ข้อมูลการติดต่อ</h2>
                   
-                  {/* ====== แสดงรูปจากแกลเลอรี (ถ้าลูกค้าจองมาจากแกลเลอรี) ====== */}
                   {portfolioImage && (
                     <div className="mb-6 p-4 bg-[#FDF6F7] rounded-xl border border-[#FAD2DB]">
                       <label className="block font-bold mb-3 text-[#D496A7]">💅 ลายเล็บที่คุณเลือกจากแกลเลอรี</label>
